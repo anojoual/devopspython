@@ -6,10 +6,9 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
-      - IMAGE_NAME="flask_rep"
       - REPOSITORY_URI=436115465111.dkr.ecr.us-east-1.amazonaws.com/flask_rep
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=build-${echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}'}
   build:
     commands:
       - echo Build started on `date`
@@ -21,8 +20,9 @@ phases:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"imageapi-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"flask_rep","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
     files: imagedefinitions.json
