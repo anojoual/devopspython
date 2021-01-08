@@ -1,0 +1,46 @@
+pipeline{
+    agent any
+
+    environment {
+      dockerversion = getVersion()
+    }
+    stages{
+        stage('SCM'){
+            steps{
+                git credentialsId: 'github', 
+                    url: 'https://github.com/anojoual/devopspython'
+            }
+        }
+        
+
+        
+        stage('Docker Build'){
+            steps{
+                sh "docker build . -t dockeransible "
+            }
+        }
+        
+        stage('Docker Push'){
+            steps{
+                //configure registry
+                withDockerRegistry(credentialsId: 'ecr:us-east-1:ecr', url: 'ecrurl')  {
+                  
+                    sh 'docker tag dockeransible:${dockerversion} ecrurl:${dockerversion}'
+                
+                    sh 'docker push ecrurl:${dockerversion}'
+                }
+            }
+        }
+        
+        // stage('Docker Deploy'){
+        //     steps{
+        //       ansiblePlaybook credentialsId: 'ssh', disableHostKeyChecking: true, extras: "-e dockerversion=${dockerversion}", installation: 'ansible', inventory: 'dev.inv', playbook: 'ansible.yml'
+        //     }
+        // }
+    }
+}
+
+def getVersion(){
+    def commitHash = sh label: '', returnStdout: true, script: 'git rev-parse --short HEAD'
+    return commitHash
+}
