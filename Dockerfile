@@ -1,4 +1,4 @@
-FROM 436115465111.dkr.ecr.us-east-1.amazonaws.com/python
+FROM python:3.7
 
 WORKDIR /project
 ADD . /project
